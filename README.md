@@ -41,54 +41,73 @@ The Weather MCP server provides tools for accessing weather information from the
 
 The DigitalOcean MCP server provides tools for deploying and managing static websites on DigitalOcean App Platform using their API.
 
+#### API Token Handling
+
+The DigitalOcean MCP server will automatically look for your API token in the following locations (in order):
+
+1. As a parameter in the tool call
+2. Environment variables: `DO_API_TOKEN` or `DIGITALOCEAN_API_TOKEN`
+3. A file at `~/.dotoken` containing just the token
+4. A `.env` file in the project root with `DO_API_TOKEN=your_token`
+5. A file at `~/.config/digitalocean/token` containing just the token
+
+This means you can set up your token once and not have to provide it with every command.
+
 #### Tools:
 
 - **deploy-static-site**: Deploy a static website to DigitalOcean App Platform
-  - Parameters:
-    - `token`: DigitalOcean API token with write access
+  - Required Parameters:
     - `app_name`: Name for your app
-    - `region`: Region code (e.g., nyc, sfo)
     - `repo`: GitHub repository (username/repo)
-    - `branch`: Branch to deploy (default: main)
-    - `source_dir`: Directory in repo containing source code (default: /)
+  - Optional Parameters:
+    - `token`: DigitalOcean API token (optional if stored in environment or config files)
+    - `region`: Region code (e.g., nyc, sfo) - Default: "nyc"
+    - `branch`: Branch to deploy - Default: "main"
+    - `source_dir`: Directory in repo containing source code - Default: "/"
     - `build_command`: Build command (if needed)
     - `output_dir`: Directory where build outputs files
-    - `deploy_on_push`: Auto-deploy on git push (default: true)
-    - `environment_slug`: Runtime environment (html, node-js, etc.) (default: html)
+    - `deploy_on_push`: Auto-deploy on git push - Default: true
+    - `environment_slug`: Runtime environment - Default: "html"
     - `custom_domain`: Custom domain (optional)
 
 - **get-app-info**: Get information about a DigitalOcean App Platform app
-  - Parameters:
-    - `token`: DigitalOcean API token
+  - Required Parameters:
     - `app_id`: App ID
+  - Optional Parameters:
+    - `token`: DigitalOcean API token (optional if stored in environment or config files)
 
 - **get-deployment-status**: Get the status of a specific deployment
-  - Parameters:
-    - `token`: DigitalOcean API token
+  - Required Parameters:
     - `app_id`: App ID
     - `deployment_id`: Deployment ID
+  - Optional Parameters:
+    - `token`: DigitalOcean API token (optional if stored in environment or config files)
 
 - **list-deployments**: List all deployments for an app
-  - Parameters:
-    - `token`: DigitalOcean API token
+  - Required Parameters:
     - `app_id`: App ID
+  - Optional Parameters:
+    - `token`: DigitalOcean API token (optional if stored in environment or config files)
 
 - **create-deployment**: Create a new deployment (redeploy an app)
-  - Parameters:
-    - `token`: DigitalOcean API token
+  - Required Parameters:
     - `app_id`: App ID
-    - `force_build`: Force a rebuild without cache (default: false)
+  - Optional Parameters:
+    - `token`: DigitalOcean API token (optional if stored in environment or config files)
+    - `force_build`: Force a rebuild without cache - Default: false
 
 - **get-deployment-logs**: Get logs for a deployment
-  - Parameters:
-    - `token`: DigitalOcean API token
+  - Required Parameters:
     - `app_id`: App ID
     - `deployment_id`: Deployment ID
+  - Optional Parameters:
+    - `token`: DigitalOcean API token (optional if stored in environment or config files)
 
 - **delete-app**: Delete an app from DigitalOcean App Platform
-  - Parameters:
-    - `token`: DigitalOcean API token
+  - Required Parameters:
     - `app_id`: App ID
+  - Optional Parameters:
+    - `token`: DigitalOcean API token (optional if stored in environment or config files)
 
 ## Adding a New MCP Server
 

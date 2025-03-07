@@ -8,7 +8,8 @@ import {
   listDeployments, 
   createDeployment, 
   getDeploymentLogs, 
-  deleteApp 
+  deleteApp,
+  findApiToken
 } from './api.js';
 import { AppSpec, StaticSite, GitSource, Domain, Alert, EnvironmentVariable } from './types.js';
 
@@ -26,9 +27,9 @@ export function createDigitalOceanServer(): McpServer {
     "deploy-static-site",
     "Deploy a static website to DigitalOcean App Platform",
     {
-      token: z.string().describe("DigitalOcean API token with write access"),
+      token: z.string().optional().describe("DigitalOcean API token with write access (optional if stored in environment or config files)"),
       app_name: z.string().describe("Name for your app"),
-      region: z.string().describe("Region code (e.g., nyc, sfo)"),
+      region: z.string().default("nyc").describe("Region code (e.g., nyc, sfo)"),
       repo: z.string().describe("GitHub repository (username/repo)"),
       branch: z.string().default("main").describe("Branch to deploy"),
       source_dir: z.string().default("/").describe("Directory in repo containing source code"),
@@ -51,6 +52,27 @@ export function createDigitalOceanServer(): McpServer {
       environment_slug,
       custom_domain
     }) => {
+      // Find API token if not provided
+      let apiToken = token;
+      if (!apiToken) {
+        const foundToken = await findApiToken();
+        if (!foundToken) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: "No DigitalOcean API token provided and none found in environment variables or config files. Please provide a token or set it in one of the following locations:\n\n" +
+                      "1. Environment variable: DO_API_TOKEN or DIGITALOCEAN_API_TOKEN\n" +
+                      "2. File: ~/.dotoken\n" +
+                      "3. File: .env in project root with DO_API_TOKEN=your_token\n" +
+                      "4. File: ~/.config/digitalocean/token"
+              }
+            ]
+          };
+        }
+        apiToken = foundToken;
+      }
+
       // Create static site configuration
       const staticSite: StaticSite = {
         name: "website",
@@ -83,7 +105,7 @@ export function createDigitalOceanServer(): McpServer {
       }
 
       // Create the app
-      const result = await createApp(appSpec, token);
+      const result = await createApp(appSpec, apiToken);
       
       return {
         content: [
@@ -101,11 +123,32 @@ export function createDigitalOceanServer(): McpServer {
     "get-app-info",
     "Get information about a DigitalOcean App Platform app",
     {
-      token: z.string().describe("DigitalOcean API token"),
+      token: z.string().optional().describe("DigitalOcean API token (optional if stored in environment or config files)"),
       app_id: z.string().describe("App ID")
     },
     async ({ token, app_id }) => {
-      const result = await getAppInfo(app_id, token);
+      // Find API token if not provided
+      let apiToken = token;
+      if (!apiToken) {
+        const foundToken = await findApiToken();
+        if (!foundToken) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: "No DigitalOcean API token provided and none found in environment variables or config files. Please provide a token or set it in one of the following locations:\n\n" +
+                      "1. Environment variable: DO_API_TOKEN or DIGITALOCEAN_API_TOKEN\n" +
+                      "2. File: ~/.dotoken\n" +
+                      "3. File: .env in project root with DO_API_TOKEN=your_token\n" +
+                      "4. File: ~/.config/digitalocean/token"
+              }
+            ]
+          };
+        }
+        apiToken = foundToken;
+      }
+      
+      const result = await getAppInfo(app_id, apiToken);
       
       return {
         content: [
@@ -123,12 +166,33 @@ export function createDigitalOceanServer(): McpServer {
     "get-deployment-status",
     "Get the status of a specific deployment",
     {
-      token: z.string().describe("DigitalOcean API token"),
+      token: z.string().optional().describe("DigitalOcean API token (optional if stored in environment or config files)"),
       app_id: z.string().describe("App ID"),
       deployment_id: z.string().describe("Deployment ID")
     },
     async ({ token, app_id, deployment_id }) => {
-      const result = await getDeploymentStatus(app_id, deployment_id, token);
+      // Find API token if not provided
+      let apiToken = token;
+      if (!apiToken) {
+        const foundToken = await findApiToken();
+        if (!foundToken) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: "No DigitalOcean API token provided and none found in environment variables or config files. Please provide a token or set it in one of the following locations:\n\n" +
+                      "1. Environment variable: DO_API_TOKEN or DIGITALOCEAN_API_TOKEN\n" +
+                      "2. File: ~/.dotoken\n" +
+                      "3. File: .env in project root with DO_API_TOKEN=your_token\n" +
+                      "4. File: ~/.config/digitalocean/token"
+              }
+            ]
+          };
+        }
+        apiToken = foundToken;
+      }
+      
+      const result = await getDeploymentStatus(app_id, deployment_id, apiToken);
       
       return {
         content: [
@@ -146,11 +210,32 @@ export function createDigitalOceanServer(): McpServer {
     "list-deployments",
     "List all deployments for an app",
     {
-      token: z.string().describe("DigitalOcean API token"),
+      token: z.string().optional().describe("DigitalOcean API token (optional if stored in environment or config files)"),
       app_id: z.string().describe("App ID")
     },
     async ({ token, app_id }) => {
-      const result = await listDeployments(app_id, token);
+      // Find API token if not provided
+      let apiToken = token;
+      if (!apiToken) {
+        const foundToken = await findApiToken();
+        if (!foundToken) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: "No DigitalOcean API token provided and none found in environment variables or config files. Please provide a token or set it in one of the following locations:\n\n" +
+                      "1. Environment variable: DO_API_TOKEN or DIGITALOCEAN_API_TOKEN\n" +
+                      "2. File: ~/.dotoken\n" +
+                      "3. File: .env in project root with DO_API_TOKEN=your_token\n" +
+                      "4. File: ~/.config/digitalocean/token"
+              }
+            ]
+          };
+        }
+        apiToken = foundToken;
+      }
+      
+      const result = await listDeployments(app_id, apiToken);
       
       return {
         content: [
@@ -168,12 +253,33 @@ export function createDigitalOceanServer(): McpServer {
     "create-deployment",
     "Create a new deployment (redeploy an app)",
     {
-      token: z.string().describe("DigitalOcean API token"),
+      token: z.string().optional().describe("DigitalOcean API token (optional if stored in environment or config files)"),
       app_id: z.string().describe("App ID"),
       force_build: z.boolean().default(false).describe("Force a rebuild without cache")
     },
     async ({ token, app_id, force_build }) => {
-      const result = await createDeployment(app_id, force_build, token);
+      // Find API token if not provided
+      let apiToken = token;
+      if (!apiToken) {
+        const foundToken = await findApiToken();
+        if (!foundToken) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: "No DigitalOcean API token provided and none found in environment variables or config files. Please provide a token or set it in one of the following locations:\n\n" +
+                      "1. Environment variable: DO_API_TOKEN or DIGITALOCEAN_API_TOKEN\n" +
+                      "2. File: ~/.dotoken\n" +
+                      "3. File: .env in project root with DO_API_TOKEN=your_token\n" +
+                      "4. File: ~/.config/digitalocean/token"
+              }
+            ]
+          };
+        }
+        apiToken = foundToken;
+      }
+      
+      const result = await createDeployment(app_id, force_build, apiToken);
       
       return {
         content: [
@@ -191,12 +297,33 @@ export function createDigitalOceanServer(): McpServer {
     "get-deployment-logs",
     "Get logs for a deployment",
     {
-      token: z.string().describe("DigitalOcean API token"),
+      token: z.string().optional().describe("DigitalOcean API token (optional if stored in environment or config files)"),
       app_id: z.string().describe("App ID"),
       deployment_id: z.string().describe("Deployment ID")
     },
     async ({ token, app_id, deployment_id }) => {
-      const result = await getDeploymentLogs(app_id, deployment_id, token);
+      // Find API token if not provided
+      let apiToken = token;
+      if (!apiToken) {
+        const foundToken = await findApiToken();
+        if (!foundToken) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: "No DigitalOcean API token provided and none found in environment variables or config files. Please provide a token or set it in one of the following locations:\n\n" +
+                      "1. Environment variable: DO_API_TOKEN or DIGITALOCEAN_API_TOKEN\n" +
+                      "2. File: ~/.dotoken\n" +
+                      "3. File: .env in project root with DO_API_TOKEN=your_token\n" +
+                      "4. File: ~/.config/digitalocean/token"
+              }
+            ]
+          };
+        }
+        apiToken = foundToken;
+      }
+      
+      const result = await getDeploymentLogs(app_id, deployment_id, apiToken);
       
       return {
         content: [
@@ -214,11 +341,32 @@ export function createDigitalOceanServer(): McpServer {
     "delete-app",
     "Delete an app from DigitalOcean App Platform",
     {
-      token: z.string().describe("DigitalOcean API token"),
+      token: z.string().optional().describe("DigitalOcean API token (optional if stored in environment or config files)"),
       app_id: z.string().describe("App ID")
     },
     async ({ token, app_id }) => {
-      const result = await deleteApp(app_id, token);
+      // Find API token if not provided
+      let apiToken = token;
+      if (!apiToken) {
+        const foundToken = await findApiToken();
+        if (!foundToken) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: "No DigitalOcean API token provided and none found in environment variables or config files. Please provide a token or set it in one of the following locations:\n\n" +
+                      "1. Environment variable: DO_API_TOKEN or DIGITALOCEAN_API_TOKEN\n" +
+                      "2. File: ~/.dotoken\n" +
+                      "3. File: .env in project root with DO_API_TOKEN=your_token\n" +
+                      "4. File: ~/.config/digitalocean/token"
+              }
+            ]
+          };
+        }
+        apiToken = foundToken;
+      }
+      
+      const result = await deleteApp(app_id, apiToken);
       
       return {
         content: [

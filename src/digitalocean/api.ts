@@ -6,9 +6,88 @@ import {
   DeploymentResponse, 
   LogResponse 
 } from './types.js';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
+import { fileURLToPath } from 'url';
 
 export const DO_API_BASE = "https://api.digitalocean.com/v2";
 export const DO_USER_AGENT = "mcp-digitalocean/1.0";
+
+/**
+ * Find the DigitalOcean API token from various locations
+ * Checks in this order:
+ * 1. Environment variables (DO_API_TOKEN or DIGITALOCEAN_API_TOKEN)
+ * 2. .dotoken file in home directory
+ * 3. .env file in project root
+ * 4. ~/.config/digitalocean/token
+ * 
+ * @returns The API token if found, null otherwise
+ */
+export async function findApiToken(): Promise<string | null> {
+  // 1. Check environment variables
+  if (process.env.DO_API_TOKEN) {
+    return process.env.DO_API_TOKEN;
+  }
+  if (process.env.DIGITALOCEAN_API_TOKEN) {
+    return process.env.DIGITALOCEAN_API_TOKEN;
+  }
+
+  // 2. Check .dotoken file in home directory
+  const homeDir = os.homedir();
+  const dotokenPath = path.join(homeDir, '.dotoken');
+  try {
+    if (fs.existsSync(dotokenPath)) {
+      const token = fs.readFileSync(dotokenPath, 'utf8').trim();
+      if (token) {
+        return token;
+      }
+    }
+  } catch (error) {
+    console.error('Error reading .dotoken file:', error);
+  }
+
+  // 3. Check .env file in project root
+  try {
+    // Get the project root directory
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    const projectRoot = path.resolve(__dirname, '../../');
+    const envPath = path.join(projectRoot, '.env');
+    
+    if (fs.existsSync(envPath)) {
+      const envContent = fs.readFileSync(envPath, 'utf8');
+      const match = envContent.match(/DO_API_TOKEN=(.+)/);
+      if (match && match[1]) {
+        return match[1].trim();
+      }
+      
+      const match2 = envContent.match(/DIGITALOCEAN_API_TOKEN=(.+)/);
+      if (match2 && match2[1]) {
+        return match2[1].trim();
+      }
+    }
+  } catch (error) {
+    console.error('Error reading .env file:', error);
+  }
+
+  // 4. Check ~/.config/digitalocean/token
+  try {
+    const configDir = path.join(homeDir, '.config', 'digitalocean');
+    const tokenPath = path.join(configDir, 'token');
+    
+    if (fs.existsSync(tokenPath)) {
+      const token = fs.readFileSync(tokenPath, 'utf8').trim();
+      if (token) {
+        return token;
+      }
+    }
+  } catch (error) {
+    console.error('Error reading config token file:', error);
+  }
+
+  return null;
+}
 
 /**
  * Make a request to the DigitalOcean API
