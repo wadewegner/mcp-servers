@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP DigitalOcean Deployment Demo</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <svg width="50" height="50" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <h1>MCP Deployment</h1>
+            </div>
+            <nav>
+                <a href="#about">About</a>
+                <a href="#features">Features</a>
+                <a href="#deployment">Deployment</a>
+            </nav>
+        </header>
+
+        <main>
+            <section class="hero">
+                <h2>Successfully Deployed with MCP DigitalOcean Server</h2>
+                <p>This static website was deployed to DigitalOcean App Platform using the Model Context Protocol (MCP) server.</p>
+                <div class="deployment-info">
+                    <div class="info-item">
+                        <span class="label">Deployment Time:</span>
+                        <span class="value" id="deployment-time"></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Server:</span>
+                        <span class="value">DigitalOcean App Platform</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Deployed Via:</span>
+                        <span class="value">MCP DigitalOcean Server</span>
+                    </div>
+                </div>
+            </section>
+
+            <section id="about" class="content-section">
+                <h3>About This Demo</h3>
+                <p>This is a demonstration of using the Model Context Protocol (MCP) to deploy static websites to DigitalOcean App Platform. The deployment was handled entirely through API calls, without using the DigitalOcean web UI or CLI tools.</p>
+                <p>The MCP server provides a set of tools that can be used by AI assistants to help you deploy and manage your static websites on DigitalOcean.</p>
+            </section>
+
+            <section id="features" class="content-section">
+                <h3>Features</h3>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">🚀</div>
+                        <h4>Easy Deployment</h4>
+                        <p>Deploy static websites to DigitalOcean App Platform with a simple command.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔄</div>
+                        <h4>Automatic Updates</h4>
+                        <p>Set up automatic deployments when you push to your repository.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📊</div>
+                        <h4>Deployment Logs</h4>
+                        <p>Access deployment logs to troubleshoot any issues.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🌐</div>
+                        <h4>Custom Domains</h4>
+                        <p>Configure custom domains for your static websites.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="deployment" class="content-section">
+                <h3>Deployment Process</h3>
+                <div class="process-steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Prepare Your Static Site</h4>
+                            <p>Create your HTML, CSS, and JavaScript files for your static website.</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Push to GitHub</h4>
+                            <p>Push your static site code to a GitHub repository.</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Use MCP to Deploy</h4>
+                            <p>Use the MCP DigitalOcean server to deploy your static site to DigitalOcean App Platform.</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h4>Monitor Deployment</h4>
+                            <p>Monitor the deployment status and view logs if needed.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; <span id="current-year"></span> MCP DigitalOcean Deployment Demo</p>
+            <p>Deployed using the Model Context Protocol</p>
+        </footer>
+    </div>
+
+    <script>
+        // Set the current year in the footer
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+        
+        // Set the deployment time
+        document.getElementById('deployment-time').textContent = new Date().toLocaleString();
+    </script>
+</body>
+</html> 

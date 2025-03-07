@@ -1,11 +1,25 @@
 import { startWeatherServer } from './weather/server.js';
+import { startDigitalOceanServer } from './digitalocean/server.js';
 
 /**
  * Main entry point
  */
 async function main() {
-  // Start the weather MCP server
-  await startWeatherServer();
+  // Determine which server to start based on command line arguments
+  const args = process.argv.slice(2);
+  const serverType = args[0] || 'weather'; // Default to weather if no argument provided
+  
+  switch (serverType) {
+    case 'digitalocean':
+      console.error('Starting DigitalOcean MCP Server...');
+      await startDigitalOceanServer();
+      break;
+    case 'weather':
+    default:
+      console.error('Starting Weather MCP Server...');
+      await startWeatherServer();
+      break;
+  }
 }
 
 main().catch((error) => {
