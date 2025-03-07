@@ -60,21 +60,45 @@ export interface AppResponse {
     default_ingress: string;
     active_deployment?: DeploymentResponse;
     created_at: string;
+    updated_at: string;
+    region: {
+      slug: string;
+      label: string;
+      flag: string;
+      continent: string;
+      datacenter: string;
+    };
+    tier_slug: string;
+    live_url: string;
+    phase: string;
   };
 }
 
-export interface DeploymentResponse {
+export interface DeploymentProgress {
+  steps_completed: number;
+  steps_total: number;
+}
+
+export interface Deployment {
   id: string;
+  spec: AppSpec;
   phase: string;
   created_at: string;
   updated_at: string;
+  progress?: DeploymentProgress;
+}
+
+export interface DeploymentResponse {
+  deployment: Deployment;
 }
 
 export interface DeploymentListResponse {
-  deployments: DeploymentResponse[];
+  deployments: Deployment[];
 }
 
 export interface LogResponse {
+  historic_urls?: string[];
+  live_url?: string;
   historic: LogEntry[];
   live: LogEntry[];
 }

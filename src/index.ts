@@ -1,5 +1,6 @@
 import { startWeatherServer } from './weather/server.js';
-import { startDigitalOceanServer } from './digitalocean/server.js';
+import { startDigitalOceanServer, createDigitalOceanServer } from './digitalocean/server.js';
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 /**
  * Main entry point
@@ -12,7 +13,8 @@ async function main() {
   switch (serverType) {
     case 'digitalocean':
       console.error('Starting DigitalOcean MCP Server...');
-      await startDigitalOceanServer();
+      const server = createDigitalOceanServer();
+      startDigitalOceanServer(server);
       break;
     case 'weather':
     default:

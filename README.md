@@ -21,6 +21,7 @@ src/
     ├── api.ts            # Template API functions
     ├── server.ts         # Template MCP server configuration
     └── types.ts          # Template API types
+tests/                    # Test scripts and files
 ```
 
 ## Available MCP Servers
@@ -131,6 +132,23 @@ node build/index.js
 
 # Run the DigitalOcean MCP server
 node build/index.js digitalocean
+```
+
+## Testing
+
+The project includes several test scripts in the `tests/` directory:
+
+- `test-simple.mjs`: A simple test script that sends JSON-RPC requests to the MCP server
+- `test-api.mjs`: A script that directly tests the DigitalOcean API
+- `test-mcp.mjs`: A more comprehensive test for the MCP server
+- `test-deploy.mjs`: A test script specifically for the deploy-static-site tool
+- `token-test.mjs`: A utility script to verify that the DigitalOcean API token can be read correctly
+
+To run a test:
+
+```bash
+# Run a test script
+node tests/test-simple.mjs
 ```
 
 ## Cursor Integration

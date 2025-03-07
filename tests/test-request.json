@@ -1,0 +1,10 @@
+{
+  "name": "deploy-static-site",
+  "parameters": {
+    "app_name": "test-static-site",
+    "region": "nyc",
+    "repo": "wadewegner/static-site-test",
+    "branch": "main",
+    "environment_slug": "html"
+  }
+} 

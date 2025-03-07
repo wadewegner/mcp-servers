@@ -98,6 +98,9 @@ export async function makeDigitalOceanRequest<T>(
   body: any = null, 
   token: string
 ): Promise<T | null> {
+  console.error(`Making DigitalOcean API request: ${method} ${url}`);
+  console.error(`Using token: ${token.substring(0, 10)}...`);
+  
   const headers: Record<string, string> = {
     "User-Agent": DO_USER_AGENT,
     "Authorization": `Bearer ${token}`,
@@ -113,23 +116,54 @@ export async function makeDigitalOceanRequest<T>(
 
     if (body && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
       options.body = JSON.stringify(body);
+      console.error(`Request body: ${JSON.stringify(body)}`);
     }
 
+    console.error(`Sending request to DigitalOcean API...`);
     const response = await fetch(url, options);
+    
+    // Always get the response text first
+    const responseText = await response.text();
+    console.error(`Response status: ${response.status}`);
+    console.error(`Response body: ${responseText}`);
+    
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      // Try to parse the error as JSON
+      let errorMessage = `HTTP error! status: ${response.status}`;
+      try {
+        const errorJson = JSON.parse(responseText);
+        if (errorJson.message) {
+          errorMessage = `DigitalOcean API error: ${errorJson.message}`;
+        } else if (errorJson.error) {
+          errorMessage = `DigitalOcean API error: ${errorJson.error}`;
+        } else if (errorJson.id) {
+          errorMessage = `DigitalOcean API error ID: ${errorJson.id}`;
+        }
+        console.error(`Parsed error message: ${errorMessage}`);
+      } catch (parseError) {
+        console.error(`Could not parse error response as JSON: ${responseText}`);
+      }
+      throw new Error(errorMessage);
     }
     
     // For DELETE requests that return no content
     if (response.status === 204) {
+      console.error(`Request successful (204 No Content)`);
       return {} as T;
     }
     
-    return await response.json() as T;
+    // Parse the response as JSON
+    try {
+      const responseData = JSON.parse(responseText);
+      console.error(`Request successful, received response`);
+      return responseData as T;
+    } catch (parseError) {
+      console.error(`Error parsing response as JSON: ${parseError}`);
+      throw new Error(`Failed to parse response as JSON: ${responseText.substring(0, 100)}...`);
+    }
   } catch (error) {
     console.error("Error making DigitalOcean API request:", error);
-    return null;
+    throw error; // Re-throw the error so it can be handled by the caller
   }
 }
 
@@ -137,140 +171,154 @@ export async function makeDigitalOceanRequest<T>(
  * Create a new app on DigitalOcean App Platform
  */
 export async function createApp(spec: AppSpec, token: string): Promise<string> {
-  const url = `${DO_API_BASE}/apps`;
-  const body = { spec };
-  
-  const response = await makeDigitalOceanRequest<AppResponse>(url, 'POST', body, token);
-  
-  if (!response) {
-    return "Failed to create app. Check your token and app specification.";
+  try {
+    const url = `${DO_API_BASE}/apps`;
+    // Wrap the app specification in a spec field
+    const body = { spec };
+    
+    console.error(`Creating app with body: ${JSON.stringify(body)}`);
+    const result = await makeDigitalOceanRequest<AppResponse>(url, 'POST', body, token);
+    
+    if (!result) {
+      return "Failed to create app. No response from DigitalOcean API.";
+    }
+    
+    const appUrl = result.app.live_url || `https://cloud.digitalocean.com/apps/${result.app.id}`;
+    return `Successfully created app "${spec.name}"!\n\nApp ID: ${result.app.id}\nLive URL: ${appUrl}\nStatus: ${result.app.phase}`;
+  } catch (error: any) {
+    return `Error creating app: ${error.message || String(error)}`;
   }
-  
-  const appId = response.app.id;
-  const defaultUrl = response.app.default_ingress;
-  const deploymentPhase = response.app.active_deployment?.phase || "UNKNOWN";
-  
-  return `App created successfully!\nApp ID: ${appId}\nDefault URL: ${defaultUrl}\nDeployment Status: ${deploymentPhase}`;
 }
 
 /**
  * Get app information
  */
 export async function getAppInfo(appId: string, token: string): Promise<string> {
-  const url = `${DO_API_BASE}/apps/${appId}`;
-  
-  const response = await makeDigitalOceanRequest<AppResponse>(url, 'GET', null, token);
-  
-  if (!response) {
-    return "Failed to get app information. Check your token and app ID.";
+  try {
+    const url = `${DO_API_BASE}/apps/${appId}`;
+    const result = await makeDigitalOceanRequest<AppResponse>(url, 'GET', null, token);
+    
+    if (!result) {
+      return `Failed to get app info for app ID: ${appId}. No response from DigitalOcean API.`;
+    }
+    
+    const app = result.app;
+    return `App Name: ${app.spec.name}\nID: ${app.id}\nCreated: ${app.created_at}\nUpdated: ${app.updated_at}\nRegion: ${app.region.slug}\nTier: ${app.tier_slug}\nLive URL: ${app.live_url || "Not available yet"}\nStatus: ${app.phase}`;
+  } catch (error: any) {
+    return `Error getting app info: ${error.message || String(error)}`;
   }
-  
-  const app = response.app;
-  const deploymentStatus = app.active_deployment?.phase || "No active deployment";
-  
-  return `App: ${app.spec.name}\nID: ${app.id}\nURL: ${app.default_ingress}\nDeployment Status: ${deploymentStatus}\nCreated: ${app.created_at}`;
 }
 
 /**
  * Get deployment status
  */
 export async function getDeploymentStatus(appId: string, deploymentId: string, token: string): Promise<string> {
-  const url = `${DO_API_BASE}/apps/${appId}/deployments/${deploymentId}`;
-  
-  const response = await makeDigitalOceanRequest<{ deployment: DeploymentResponse }>(url, 'GET', null, token);
-  
-  if (!response) {
-    return "Failed to get deployment status. Check your token, app ID, and deployment ID.";
+  try {
+    const url = `${DO_API_BASE}/apps/${appId}/deployments/${deploymentId}`;
+    const result = await makeDigitalOceanRequest<DeploymentResponse>(url, 'GET', null, token);
+    
+    if (!result) {
+      return `Failed to get deployment status for app ID: ${appId}, deployment ID: ${deploymentId}. No response from DigitalOcean API.`;
+    }
+    
+    const deployment = result.deployment;
+    return `Deployment ID: ${deployment.id}\nStatus: ${deployment.phase}\nCreated: ${deployment.created_at}\nUpdated: ${deployment.updated_at}\nProgress: ${deployment.progress?.steps_completed || 0}/${deployment.progress?.steps_total || 0} steps completed`;
+  } catch (error: any) {
+    return `Error getting deployment status: ${error.message || String(error)}`;
   }
-  
-  const deployment = response.deployment;
-  
-  return `Deployment ID: ${deployment.id}\nStatus: ${deployment.phase}\nCreated: ${deployment.created_at}\nLast Updated: ${deployment.updated_at}`;
 }
 
 /**
  * List deployments for an app
  */
 export async function listDeployments(appId: string, token: string): Promise<string> {
-  const url = `${DO_API_BASE}/apps/${appId}/deployments`;
-  
-  const response = await makeDigitalOceanRequest<DeploymentListResponse>(url, 'GET', null, token);
-  
-  if (!response) {
-    return "Failed to list deployments. Check your token and app ID.";
+  try {
+    const url = `${DO_API_BASE}/apps/${appId}/deployments`;
+    const result = await makeDigitalOceanRequest<DeploymentListResponse>(url, 'GET', null, token);
+    
+    if (!result) {
+      return `Failed to list deployments for app ID: ${appId}. No response from DigitalOcean API.`;
+    }
+    
+    if (result.deployments.length === 0) {
+      return `No deployments found for app ID: ${appId}`;
+    }
+    
+    let output = `Deployments for app ID: ${appId}\n\n`;
+    result.deployments.forEach((deployment, index) => {
+      output += `${index + 1}. ID: ${deployment.id}\n   Status: ${deployment.phase}\n   Created: ${deployment.created_at}\n   Updated: ${deployment.updated_at}\n\n`;
+    });
+    
+    return output;
+  } catch (error: any) {
+    return `Error listing deployments: ${error.message || String(error)}`;
   }
-  
-  const deployments = response.deployments;
-  
-  if (deployments.length === 0) {
-    return "No deployments found for this app.";
-  }
-  
-  const formattedDeployments = deployments.map(d => 
-    `ID: ${d.id}\nStatus: ${d.phase}\nCreated: ${d.created_at}`
-  );
-  
-  return `Deployments for App ${appId}:\n\n${formattedDeployments.join('\n\n')}`;
 }
 
 /**
  * Create a new deployment (redeploy)
  */
 export async function createDeployment(appId: string, forceBuild: boolean, token: string): Promise<string> {
-  const url = `${DO_API_BASE}/apps/${appId}/deployments`;
-  const body = forceBuild ? { force_build: true } : {};
-  
-  const response = await makeDigitalOceanRequest<{ deployment: DeploymentResponse }>(url, 'POST', body, token);
-  
-  if (!response) {
-    return "Failed to create deployment. Check your token and app ID.";
+  try {
+    const url = `${DO_API_BASE}/apps/${appId}/deployments`;
+    const body = forceBuild ? { force_build: true } : {};
+    const result = await makeDigitalOceanRequest<DeploymentResponse>(url, 'POST', body, token);
+    
+    if (!result) {
+      return `Failed to create deployment for app ID: ${appId}. No response from DigitalOcean API.`;
+    }
+    
+    const deployment = result.deployment;
+    return `Successfully created deployment!\n\nDeployment ID: ${deployment.id}\nStatus: ${deployment.phase}\nCreated: ${deployment.created_at}`;
+  } catch (error: any) {
+    return `Error creating deployment: ${error.message || String(error)}`;
   }
-  
-  const deployment = response.deployment;
-  
-  return `Deployment created successfully!\nDeployment ID: ${deployment.id}\nStatus: ${deployment.phase}\nCreated: ${deployment.created_at}`;
 }
 
 /**
  * Get deployment logs
  */
 export async function getDeploymentLogs(appId: string, deploymentId: string, token: string): Promise<string> {
-  const url = `${DO_API_BASE}/apps/${appId}/deployments/${deploymentId}/logs`;
-  
-  const response = await makeDigitalOceanRequest<LogResponse>(url, 'GET', null, token);
-  
-  if (!response) {
-    return "Failed to get deployment logs. Check your token, app ID, and deployment ID.";
+  try {
+    const url = `${DO_API_BASE}/apps/${appId}/deployments/${deploymentId}/logs`;
+    const result = await makeDigitalOceanRequest<LogResponse>(url, 'GET', null, token);
+    
+    if (!result) {
+      return `Failed to get logs for app ID: ${appId}, deployment ID: ${deploymentId}. No response from DigitalOcean API.`;
+    }
+    
+    if (!result.historic_urls || result.historic_urls.length === 0) {
+      return `No logs available for deployment ID: ${deploymentId}`;
+    }
+    
+    // Get the most recent logs
+    const logUrl = result.live_url || result.historic_urls[0];
+    
+    try {
+      const logResponse = await fetch(logUrl);
+      if (!logResponse.ok) {
+        return `Failed to fetch logs from URL: ${logUrl}. Status: ${logResponse.status}`;
+      }
+      
+      const logs = await logResponse.text();
+      return logs.length > 0 ? logs : "No log content available";
+    } catch (logError: any) {
+      return `Error fetching logs from URL: ${logError.message || String(logError)}`;
+    }
+  } catch (error: any) {
+    return `Error getting deployment logs: ${error.message || String(error)}`;
   }
-  
-  // Combine historic and live logs
-  const allLogs = [...response.historic, ...response.live];
-  
-  if (allLogs.length === 0) {
-    return "No logs found for this deployment.";
-  }
-  
-  // Sort logs by timestamp
-  allLogs.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-  
-  const formattedLogs = allLogs.map(log => 
-    `[${log.timestamp}] ${log.component_name}: ${log.message}`
-  );
-  
-  return `Logs for Deployment ${deploymentId}:\n\n${formattedLogs.join('\n')}`;
 }
 
 /**
  * Delete an app
  */
 export async function deleteApp(appId: string, token: string): Promise<string> {
-  const url = `${DO_API_BASE}/apps/${appId}`;
-  
-  const response = await makeDigitalOceanRequest<{}>(url, 'DELETE', null, token);
-  
-  if (!response) {
-    return "Failed to delete app. Check your token and app ID.";
+  try {
+    const url = `${DO_API_BASE}/apps/${appId}`;
+    await makeDigitalOceanRequest(url, 'DELETE', null, token);
+    return `Successfully deleted app with ID: ${appId}`;
+  } catch (error: any) {
+    return `Error deleting app: ${error.message || String(error)}`;
   }
-  
-  return `App ${appId} deleted successfully.`;
 } 
